@@ -26,20 +26,21 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <sys/time.h>
 #include <assert.h>
 #include <stdbool.h>
 
-static float ctest_bench = 0, ctest_elapsed;
+static double ctest_elapsed;
 static unsigned ctest_fails = 0, ctest_last = 0;
 static char *ctest_msg = NULL;
+struct timeval ctest_start, ctest_end;
 
 #define CTEST_SUITE(name) \
     do { \
         printf("\n  \x1B[1m\x1B[37m" name "\x1B[0m\n\n"); \
-        (void)ctest_bench; (void)ctest_elapsed; \
+        (void)ctest_msg; (void)ctest_elapsed; \
         (void)ctest_fails; (void)ctest_last; \
-        (void)ctest_msg; \
+        (void)ctest_start; (void)ctest_end; \
     } while (0)
 
 #define CTEST_END \
@@ -78,7 +79,7 @@ static char *ctest_msg = NULL;
 
 #define CTEST_BENCH_START(msg) \
     do { \
-        ctest_bench = (float) clock(); \
+        gettimeofday(&ctest_start, NULL); \
         printf("    [  ....s  ....MB/s  ] %s", msg); \
         fflush(stdout); \
         ctest_msg = msg; \
@@ -86,7 +87,9 @@ static char *ctest_msg = NULL;
 
 #define CTEST_BENCH_END(size) \
     do { \
-        ctest_elapsed = ((float)clock() - ctest_bench) / CLOCKS_PER_SEC; \
+        gettimeofday(&ctest_end, NULL); \
+        ctest_elapsed = (double)(ctest_end.tv_sec - ctest_start.tv_sec) \
+            + (double)(ctest_end.tv_usec - ctest_start.tv_usec) / 1000000; \
         printf("\r    [  \x1B[32m%1.2fs\x1B[0m  \x1B[33m%4.0fMB/s\x1B[0m  ] %s", \
             ctest_elapsed, (float)(size) / 1024 / 1024 / ctest_elapsed, ctest_msg); \
         printf("                        \n"); \
